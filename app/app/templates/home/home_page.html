@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load wagtailcore_tags %}
+
+
+{% block content %}
+
+{{self.title}}
+
+{% load wagtail_modeltranslation %}
+
+{% get_available_languages_wmt as languages %}
+{% for language in languages %}
+<li>
+    <a href="{% change_lang language page %}">
+        <span>{{ language }}</span>
+    </a>
+</li>
+{% endfor %}
+
+
+
+    {% for block in self.content  %}
+    
+        {% include_block block %}
+
+    {% endfor %}
+
+
+{% endblock %}
