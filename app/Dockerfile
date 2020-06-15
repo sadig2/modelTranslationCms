@@ -1,27 +1,31 @@
-# Use an official Python runtime as a parent image
-FROM python:3.7
-LABEL maintainer="hello@wagtail.io"
+# pull official base image
+FROM python:3.8.0-alpine
 
-# Set environment varibles
+# set work directory
+WORKDIR /usr/src/app
+
+# set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
-ENV DJANGO_ENV dev
 
-COPY ./requirements.txt /code/requirements.txt
+# install psycopg2 dependencies
+RUN apk update \
+    && apk add postgresql-dev gcc python3-dev musl-dev
+
+# install Pillow dependencies
+RUN apk add zlib libjpeg-turbo-dev libpng-dev freetype-dev lcms2-dev libwebp-dev \
+    harfbuzz-dev fribidi-dev tcl-dev tk-dev
+
+# install dependencies
 RUN pip install --upgrade pip
-# Install any needed packages specified in requirements.txt
-RUN pip install -r /code/requirements.txt
-RUN pip install gunicorn
+COPY ./requirements.txt /usr/src/app/requirements.txt
+RUN pip install -r requirements.txt
 
-# Copy the current directory contents into the container at /code/
-COPY . /code/
-# Set the working directory to /code/
-WORKDIR /code/
+# copy entrypoint.sh
+COPY ./entrypoint.sh /usr/src/app/entrypoint.sh
 
-RUN python manage.py migrate
+# copy project
+COPY . /usr/src/app/
 
-RUN useradd wagtail
-RUN chown -R wagtail /code
-USER wagtail
-
-EXPOSE 8000
-CMD exec gunicorn app.wsgi:application --bind 0.0.0.0:8000 --workers 3
+# run entrypoint.sh
+ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
